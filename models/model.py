@@ -3,6 +3,11 @@ import tqdm
 from core.base_model import BaseModel
 from core.logger import LogTracker
 import copy
+
+# 新添加的包
+import os
+import shutil
+
 class EMA():
     def __init__(self, beta=0.9999):
         super().__init__()
@@ -104,6 +109,7 @@ class Palette(BaseModel):
     def train_step(self):
         self.netG.train()
         self.train_metrics.reset()
+        train_loss = 0
         for train_data in tqdm.tqdm(self.phase_loader):
             self.set_input(train_data)
             self.optG.zero_grad()
@@ -116,21 +122,24 @@ class Palette(BaseModel):
             self.train_metrics.update(self.loss_fn.__name__, loss.item())
             if self.iter % self.opt['train']['log_iter'] == 0:
                 for key, value in self.train_metrics.result().items():
-                    self.logger.info('{:5s}: {}\t'.format(str(key), value))
+                    # self.logger.info('{:5s}: {}\t'.format(str(key), value))
                     self.writer.add_scalar(key, value)
                 for key, value in self.get_current_visuals().items():
                     self.writer.add_images(key, value)
+            train_loss += self.train_metrics.result()['train/mse_loss']
             if self.ema_scheduler is not None:
                 if self.iter > self.ema_scheduler['ema_start'] and self.iter % self.ema_scheduler['ema_iter'] == 0:
                     self.EMA.update_model_average(self.netG_EMA, self.netG)
 
+        train_loss = train_loss / len(self.phase_loader)
         for scheduler in self.schedulers:
             scheduler.step()
-        return self.train_metrics.result()
+        return {'train/mse_loss': train_loss}
     
     def val_step(self):
         self.netG.eval()
         self.val_metrics.reset()
+        val_loss = 0
         with torch.no_grad():
             for val_data in tqdm.tqdm(self.val_loader):
                 self.set_input(val_data)
@@ -155,11 +164,21 @@ class Palette(BaseModel):
                     value = met(self.gt_image, self.output)
                     self.val_metrics.update(key, value)
                     self.writer.add_scalar(key, value)
+                val_loss += self.val_metrics.result()['val/mae']
                 for key, value in self.get_current_visuals(phase='val').items():
                     self.writer.add_images(key, value)
+                # self.writer.save_images(self.save_current_results())
+
+            # 记录mae平均值
+            val_loss = val_loss / len(self.val_loader)
+            # 保存最好的checkpoint下的图片
+            if val_loss < self.opt['train']['min_val_mae_loss']:
+                path = self.opt['path']['results'] + '/val'
+                if os.path.exists(path):
+                    shutil.rmtree(path)
                 self.writer.save_images(self.save_current_results())
 
-        return self.val_metrics.result()
+        return {'val/mae': val_loss}
 
     def test(self):
         self.netG.eval()

@@ -7,6 +7,8 @@ import numpy as np
 
 from .util.mask import (bbox2mask, brush_stroke_mask, get_irregular_mask, random_bbox, random_cropping_bbox)
 
+from mask_generation.utils import MaskGeneration, MergeMask, RandomAttribute
+
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
     '.png', '.PNG', '.ppm', '.PPM', '.bmp', '.BMP',
@@ -48,8 +50,53 @@ class InpaintDataset(data.Dataset):
         self.mask_config = mask_config
         self.mask_mode = self.mask_config['mask_mode']
         self.image_size = image_size
+        # ***************** 区分train与evaluate **************
+        self.phase = self.mask_config['phase']
+        self.m12_mode = self.mask_config["m12_mode"]
+        self.img = self.imgs[0]
 
     def __getitem__(self, index):
+        # ***************** 切换train与evaluate **************
+        self.phase = self.mask_config['phase']
+
+        # ***************** 待验证 ***********************
+        if self.phase == 'eval':
+            self.mask_mode = 'center'
+        else:
+            self.mask_mode = self.mask_config['mask_mode']
+
+        if self.mask_mode == 'm3':
+            self.mask_mode = np.random.choice(['ThickStrokes', 'MediumStrokes', 'ThinStrokes'])
+        elif self.mask_mode == 'm5':
+            self.mask_mode = np.random.choice(['ThickStrokes', 'MediumStrokes', 'ThinStrokes', 'Every_N_Lines', 'Completion'])
+        elif self.mask_mode == 'm7':
+            self.mask_mode = np.random.choice(['ThickStrokes', 'MediumStrokes', 'ThinStrokes', 'Every_N_Lines', 'Completion', 'Expand', 'Nearest_Neighbor'])
+
+        if self.mask_mode == 'ThinStrokes':
+            self.m12_mode = RandomAttribute('ThinStrokes', 256)
+        elif self.mask_mode == 'MediumStrokes':
+            self.m12_mode = RandomAttribute('MediumStrokes', 256)
+        elif self.mask_mode == 'ThickStrokes':
+            self.m12_mode = RandomAttribute('ThickStrokes', 256)
+        elif self.mask_mode == 'Every_N_Lines':
+            self.m12_mode = RandomAttribute('Every_N_Lines', 256)
+        elif self.mask_mode == 'Completion':
+            self.m12_mode = RandomAttribute('Completion', 256)
+        elif self.mask_mode == 'Expand':
+            self.m12_mode = RandomAttribute('Expand', 256)
+        elif self.mask_mode == 'Nearest_Neighbor':
+            self.m12_mode = RandomAttribute('Nearest_Neighbor', 256)
+
+        print(self.mask_mode)
+
+
+        # if self.phase == 'train':
+        #     self.mask_mode = self.mask_config['mask_mode']
+        # elif self.phase == 'test':
+        #     self.mask_mode = self.mask_config['mask_mode']
+        # else:
+        #     self.mask_mode = 'center'
+
         ret = {}
         path = self.imgs[index]
         img = self.tfs(self.loader(path))
@@ -68,6 +115,7 @@ class InpaintDataset(data.Dataset):
         return len(self.imgs)
 
     def get_mask(self):
+        mask_generation = MaskGeneration()
         if self.mask_mode == 'bbox':
             mask = bbox2mask(self.image_size, random_bbox())
         elif self.mask_mode == 'center':
@@ -81,6 +129,20 @@ class InpaintDataset(data.Dataset):
             regular_mask = bbox2mask(self.image_size, random_bbox())
             irregular_mask = brush_stroke_mask(self.image_size, )
             mask = regular_mask | irregular_mask
+        elif self.mask_mode == 'ThinStrokes':
+            mask = mask_generation(self.img, self.m12_mode)
+        elif self.mask_mode == 'MediumStrokes':
+            mask = mask_generation(self.img, self.m12_mode)
+        elif self.mask_mode == 'ThickStrokes':
+            mask = mask_generation(self.img, self.m12_mode)
+        elif self.mask_mode == 'Every_N_Lines':
+            mask = mask_generation(self.img, self.m12_mode)
+        elif self.mask_mode == 'Completion':
+            mask = mask_generation(self.img, self.m12_mode)
+        elif self.mask_mode == 'Expand':
+            mask = mask_generation(self.img, self.m12_mode)
+        elif self.mask_mode == 'Nearest_Neighbor':
+            mask = mask_generation(self.img, self.m12_mode)
         elif self.mask_mode == 'file':
             pass
         else:

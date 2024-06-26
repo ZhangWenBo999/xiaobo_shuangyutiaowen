@@ -103,6 +103,10 @@ class VisualWriter():
         os.makedirs(result_path, exist_ok=True)
         result_path = os.path.join(result_path, str(self.epoch))
         os.makedirs(result_path, exist_ok=True)
+        GT_path = os.path.join(result_path, 'GT')
+        os.makedirs(GT_path, exist_ok=True)
+        Out_path = os.path.join(result_path, 'Out')
+        os.makedirs(Out_path, exist_ok=True)
 
         ''' get names and corresponding images from results[OrderedDict] '''
         try:
@@ -110,6 +114,12 @@ class VisualWriter():
             outputs = Util.postprocess(results['result'])
             for i in range(len(names)): 
                 Image.fromarray(outputs[i]).save(os.path.join(result_path, names[i]))
+                if('GT' in names[i]):
+                    GT = names[i].split("_", 1)
+                    Image.fromarray(outputs[i]).save(os.path.join(GT_path, GT[1]))
+                if('Out' in names[i]):
+                    Out = names[i].split("_", 1)
+                    Image.fromarray(outputs[i]).save(os.path.join(Out_path, Out[1]))
         except:
             raise NotImplementedError('You must specify the context of name and result in save_current_results functions of model.')
 
