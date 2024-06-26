@@ -10,8 +10,8 @@
         "tb_logger": "tb_logger", // path of tensorboard logger
         "results": "results",
         "checkpoint": "checkpoint",
-        "resume_state": "experiments/train_inpainting_celebahq_240626_103929/checkpoint/best/2"
-        // "resume_state": null // ex: 100, loading .state  and .pth from given epoch and iteration
+//        "resume_state": "experiments/train_inpainting_celebahq_240626_103929/checkpoint/best/2"
+        "resume_state": null // ex: 100, loading .state  and .pth from given epoch and iteration
     },
 
     "datasets": { // train or test
@@ -20,13 +20,13 @@
                 "name": ["data.dataset", "InpaintDataset"], // import Dataset() class / function(not recommend) from data.dataset.py (default is [data.dataset.py])
                 "args":{ // arguments to initialize dataset
                     // train_giga
-//                    "data_root": "datasets/celebahq_flist/flist/train_shuffled_giga.flist",
+                    "data_root": "datasets/celebahq_flist/flist/train_shuffled_giga.flist",
                     // train_local_test_giga
-                    "data_root": "datasets/celebahq_flist/flist/train_shuffled_local_test.flist",
+//                    "data_root": "datasets/celebahq_flist/flist/train_shuffled_local_test.flist",
 
                     "data_len": -1,
                     "mask_config": {
-                        "mask_mode": "m7",
+                        "mask_mode": "hybrid",
                         "phase": "train",
                         "m12_mode": "mask_generation/lama_generation/random_thin_256.yaml"
                     }
@@ -35,7 +35,7 @@
             "dataloader":{
                 "validation_split": 4, // percent or number
                 "args":{ // arguments to initialize train_dataloader
-                    "batch_size": 3, // batch size in each gpu
+                    "batch_size": 5, // batch size in each gpu
                     "num_workers": 12,
                     "shuffle": true,
                     "pin_memory": true,
@@ -55,9 +55,9 @@
                 "name": "InpaintDataset", // import Dataset() class / function(not recommend) from default file
                 "args":{
                     // test_giga
-//                    "data_root": "datasets/celebahq_flist/flist/visual_test_shuffled_giga.flist",
+                    "data_root": "datasets/celebahq_flist/flist/visual_test_shuffled_giga.flist",
                     // test_local_test
-                    "data_root": "datasets/celebahq_flist/flist/visual_test_shuffled_local_test.flist",
+//                    "data_root": "datasets/celebahq_flist/flist/visual_test_shuffled_local_test.flist",
                     "mask_config": {
 //                        "mask_mode": "center",
                         "mask_mode": "ThinStrokes",
@@ -67,8 +67,8 @@
             },
             "dataloader":{
                 "args":{
-                    "batch_size": 1,
-                    "num_workers": 4,
+                    "batch_size": 5,
+                    "num_workers": 12,
                     "pin_memory": true
                 }
             }
@@ -144,19 +144,19 @@
     },
 
     "train": { // arguments for basic training
-        "n_epoch": 28, // max epochs, not limited now
+        "n_epoch": 200, // max epochs, not limited now
         "n_iter": 1e8, // max interations
         "val_epoch": 1, // valdation every specified number of epochs
         "save_checkpoint_epoch": 1,
         "log_iter": 1e3, // log every specified number of iterations
         "tensorboard" : true,  // tensorboardX enable
-//        "min_val_mae_loss": 1e3, // 记录验证阶段最小的mae值，便于选择最好的权重文件
-        "min_val_mae_loss": 0.1820216327905655, // 记录验证阶段最小的mae值，便于选择最好的权重文件
+        "min_val_mae_loss": 1e3, // 记录验证阶段最小的mae值，便于选择最好的权重文件
+//        "min_val_mae_loss": 0.1820216327905655, // 记录验证阶段最小的mae值，便于选择最好的权重文件
         "min_val_flag": false, // 最好权重文件的标志位
-//        "train_previous": [], // 保存之前的训练损失，便于自动生成训练损失曲线
-//        "eval_previous": []   // 保存之前的验证损失，便于自动生成验证损失曲线
-        "train_previous": [1.2148903674549525, 0.65961221853892, 0.5289479808674918, 0.5209470060136584, 0.5719142357508341, 0.5036077151695887, 0.4427877581781811, 0.4286843554841147], // 保存之前的训练损失，便于自动生成训练损失曲线
-        "eval_previous": [0.2197141945362091, 0.1820216327905655, 0.1827697455883026, 0.18691465258598328, 0.19094650447368622, 0.19108915328979492, 0.19059845805168152, 0.1901702582836151]   // 保存之前的验证损失，便于自动生成验证损失曲线
+        "train_previous": [], // 保存之前的训练损失，便于自动生成训练损失曲线
+        "eval_previous": []   // 保存之前的验证损失，便于自动生成验证损失曲线
+//        "train_previous": [1.2148903674549525, 0.65961221853892, 0.5289479808674918, 0.5209470060136584, 0.5719142357508341, 0.5036077151695887, 0.4427877581781811, 0.4286843554841147], // 保存之前的训练损失，便于自动生成训练损失曲线
+//        "eval_previous": [0.2197141945362091, 0.1820216327905655, 0.1827697455883026, 0.18691465258598328, 0.19094650447368622, 0.19108915328979492, 0.19059845805168152, 0.1901702582836151]   // 保存之前的验证损失，便于自动生成验证损失曲线
     },
     
     "debug": { // arguments in debug mode, which will replace arguments in train
